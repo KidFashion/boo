@@ -39,7 +39,7 @@ using System.Reflection;
 [assembly: AssemblyVersion("2.0.9.5")]
 [assembly: AssemblyDelaySign(false)]
 #if !IGNOREKEYFILE
-[assembly: AssemblyKeyFile("../src/boo.snk")]
+[assembly: AssemblyKeyFile("../boo.snk")]
 #endif
 [assembly: AssemblyKeyName("")]
 
