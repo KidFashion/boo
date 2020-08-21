@@ -103,7 +103,8 @@ Task Init-All {
 Task Build-BooLangExtensions -depends Build-BooCompilerTool, Init-All {
     Push-Location src/Boo.Lang.Extensions
     &$script:booc `
-        -o:".\Boo.Lang.Extensions.dll" `
+        -o:"$artifactdir\Boo.Lang.Extensions.dll" `
+        -r:"$artifactdir\Boo.Lang.Parser.dll" `
         .\AssemblyInfo.boo `
         .\Macros\AssertMacro.boo `
         .\Macros\CheckedMacro.boo `
@@ -206,6 +207,7 @@ Task Build-BooLangCodeDom -depends Build-BooCompilerTool, Init-All {
     &$script:booc `
         -o:"$artifactdir\Boo.Lang.CodeDom.dll" `
         -srcdir:.
+        -r:"$artifactdir\Boo.Lang.Parser.dll" `
     pop-location
 }
 
