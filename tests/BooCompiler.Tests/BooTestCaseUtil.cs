@@ -49,8 +49,9 @@ namespace BooCompiler.Tests
 		{
 			get
 			{
+				// TODO: Adding 3 .. to match dotnet directory hierarchies
 				var codebase = new Uri(Assembly.GetExecutingAssembly().CodeBase);
-				return new Uri(codebase, "../..").LocalPath;
+				return new Uri(codebase, "../../../../..").LocalPath;
 			}
 		}
 

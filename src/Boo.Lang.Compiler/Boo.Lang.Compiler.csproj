@@ -20,13 +20,6 @@
     <PackageReference Include="System.Security.Permissions" Version="4.7.0" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <PackageId>Boo.Lang.Compiler</PackageId>
-    <Version>2.0.9.5</Version>
-    <Authors>Angelo Simone Scotto</Authors>
-    <Company>TCP Software</Company>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Boo.Lang\Boo.Lang.csproj" />
   </ItemGroup>
