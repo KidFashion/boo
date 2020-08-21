@@ -100,7 +100,7 @@ Task Clean-All {
 Task Init-All {
     mkdir -Force $artifactdir
 }
-Task Build-BooLangExtensions -depends Build-BooCompilerTool, Init-All {
+Task Build-BooLangExtensions -depends Build-BooCompilerTool, Build-BooLangParser, Init-All {
     if (Test-Path "$artifactdir/Boo.Lang.Extensions.dll") 
     {
     Remove-Item "$artifactdir/Boo.Lang.Extensions.dll"
