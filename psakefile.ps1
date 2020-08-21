@@ -101,11 +101,12 @@ Task Init-All {
     mkdir -Force $artifactdir
 }
 Task Build-BooLangExtensions -depends Build-BooCompilerTool, Init-All {
+    Remove-Item "$artifactdir/Boo.Lang.Extensions.dll"
     Push-Location src/Boo.Lang.Extensions
     &$script:booc `
-        -o:"$artifactdir\Boo.Lang.Extensions.dll" `
-        -t:classlib `
+        -o:"Boo.Lang.Extensions.dll" `
         .\AssemblyInfo.boo `
+        .\Macros\MacroMacro.boo `
         .\Macros\AssertMacro.boo `
         .\Macros\CheckedMacro.boo `
         .\Macros\DebugMacro.boo `
