@@ -153,7 +153,7 @@ Task Build-BooLangPatternMatching -depends Build-BooCompilerTool, Init-All {
 }
 
 
-Task Build-TestBooSupportingClasses -depends Build-BooCompilerTool, Init-All {
+Task Build-BooSupportingClasses -depends Build-BooCompilerTool, Init-All {
     Push-Location tests/BooSupportingClasses
     &$script:booc `
         -o:"$artifactdir\BooSupportingClasses.dll" `
@@ -161,7 +161,7 @@ Task Build-TestBooSupportingClasses -depends Build-BooCompilerTool, Init-All {
     pop-location
 }
 
-Task Build-TestBooModules -depends Build-BooCompilerTool, Init-All {
+Task Build-BooModules -depends Build-BooCompilerTool, Init-All {
     Push-Location tests/BooModules
     &$script:booc `
         -o:"$artifactdir\BooModules.dll" `
@@ -180,10 +180,13 @@ Task Build-BooLangInterpreter -depends Build-BooCompilerTool, Build-BooLangPatte
 
 Task Build-BooLangUseful -depends Build-BooCompilerTool, Init-All {
     Push-Location src/Boo.Lang.Useful
+    $backupErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
     &$script:booc `
         -o:"$artifactdir\Boo.Lang.Useful.dll" `
         -srcdir:. `
         -r:"$artifactdir\Boo.Lang.Parser.dll"
+    $ErrorActionPreference = $backupErrorActionPreference
     pop-location
 }
 
@@ -230,11 +233,14 @@ Task Build-BooCompilerResourcesTests -depends Build-BooCompilerTool, Init-All {
 
 Task Build-BooLangCodedomTests -depends  Build-BooLangCodedom, Build-BooCompilerTool, Init-All {
     Push-Location tests/Boo.Lang.CodeDom.Tests
+    $backupErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.CodeDom.Tests.build
     &$script:booc `
         -o:"$artifactdir\Boo.Lang.CodeDom.Tests.dll" `
         -srcdir:. `
         -r:$nunit_ref 
+    $ErrorActionPreference = $backupErrorActionPreference
     pop-location
 }
 
@@ -251,11 +257,14 @@ Task Build-BooLangCompilerTests -depends Build-BooLangCompiler, Build-BooCompile
 Task Build-BooLangInterpreterTests -depends  Build-BooLangInterpreter, Build-BooCompilerTool, Init-All {
     Push-Location tests/Boo.Lang.Interpreter.Tests
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.Interpreter.Tests.build
+    $backupErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
     &$script:booc `
         -o:"$artifactdir\Boo.Lang.Interpreter.Tests.dll" `
         -srcdir:. `
         -r:$nunit_ref `
         -r:"$artifactdir\Boo.Lang.Interpreter.dll" 
+    $ErrorActionPreference = $backupErrorActionPreference
     pop-location
 }
 
@@ -334,7 +343,7 @@ Task Test-Booc  {
     pop-location
 }
 
-Task Build-BooCompilerTests {
+Task Build-BooCompilerTests -depends Build-BooSupportingClasses, Build-BooModules {
     Push-Location tests/BooCompiler.Tests
     dotnet build BooCompiler.Tests.csproj
     # TODO: Check Release/Debug/Framework
