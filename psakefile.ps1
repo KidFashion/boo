@@ -105,7 +105,6 @@ Task Build-BooLangExtensions -depends Build-BooCompilerTool, Init-All {
     {
     Remove-Item "$artifactdir/Boo.Lang.Extensions.dll"
     }
-    Remove-Item 
     Push-Location src/Boo.Lang.Extensions
     &$script:booc `
         -o:"Boo.Lang.Extensions.dll" `
