@@ -12,6 +12,8 @@ Properties {
     $outdir = if (test-path env:CCNetArtifactDirectory) {[System.String]::Concat((ls env:CCNetArtifactDirectory).Value,"\Staging\\")} else {[System.String]::Concat((pwd),"\Staging\\")}
     $artifactdir = [System.String]::Concat((pwd),"\Artifacts\")
     $deployPackageDir = (join-path $outdir "..\DeployPackage")
+    # HACK: Hardwired target and release type (Debug)
+    $buildOutput = "bin/Debug/net48"
 }
 
 Task default -depends Print-TaskList 
@@ -46,29 +48,31 @@ Write-Host -ForegroundColor Green "Clean-All"-nonewline; write-host " : Clean Ar
 
 }
 
-Task Build-BooLang {
+Task Build-BooLang -depends Init-All {
     Push-Location src/Boo.Lang
     dotnet build Boo.Lang.csproj
+    Copy-Item (join-path $buildOutput "*.*") $artifactdir
     pop-location
 }
 
-Task Build-BooLangCompiler {
+Task Build-BooLangCompiler -depends Init-All {
     Push-Location src/Boo.Lang.Compiler
     dotnet build Boo.Lang.Compiler.csproj
+    Copy-Item (join-path $buildOutput "*.*") $artifactdir
     pop-location
 }
 
-Task Build-BooLangParser {
+Task Build-BooLangParser -depends Init-All {
     Push-Location src/Boo.Lang.Parser
     dotnet build Boo.Lang.Parser.csproj
+    Copy-Item (join-path $buildOutput "*.*") $artifactdir
     pop-location
 }
 
-Task Build-BooCompilerTool -depends Build-BooLangCompiler, Build-BooLang{
+Task Build-BooCompilerTool -depends Build-BooLangCompiler, Build-BooLang, Init-All{
     Push-Location src/Booc
     dotnet build Booc.csproj
     # TODO: Check Release/Debug/Framework
-    $buildOutput = join-path (Get-Location) "bin\Debug\net48\"
     Copy-Item (join-path $buildOutput "*.*") $artifactdir
     pop-location
     $script:booc = join-path ($artifactdir) "\booc.exe"
@@ -77,16 +81,16 @@ Task Build-BooCompilerTool -depends Build-BooLangCompiler, Build-BooLang{
 Task Build-BooCore -depends Build-BooLang, Build-BooLangCompiler, Build-BooLangParser{
 }
 
-Task Build-All -depends Build-BooLang, 
-                        Build-BooLangCompiler, 
-                        Build-BooLangParser,
-                        Build-BooLangCodeDom,
+Task Build-All -depends Build-BooLangCodeDom,
                         Build-BooLangExtensions,
-                        Build-BooLangInterpreter,
                         Build-BooLangPatternMatching,
-                        Build-BooLangUseful,
                         Build-Booish,
-                        Build-Booi {
+                        Build-Booi,
+                        Build-BooLangInterpreter,
+                        Build-BooLangUseful,
+                        Build-BooLangParser,
+                        Build-BooLangCompiler,
+                        Build-BooLang {
 }
 
 Task Clean-All {
@@ -96,10 +100,10 @@ Task Clean-All {
 Task Init-All {
     mkdir -Force $artifactdir
 }
-Task Build-BooLangExtensions -depends Init-All, Build-BooCompilerTool {
+Task Build-BooLangExtensions -depends Build-BooCompilerTool, Init-All {
     Push-Location src/Boo.Lang.Extensions
     &$script:booc `
-        -o:"$artifactdir\Boo.Lang.Extensions.dll" `
+        -o:".\Boo.Lang.Extensions.dll" `
         .\AssemblyInfo.boo `
         .\Macros\AssertMacro.boo `
         .\Macros\CheckedMacro.boo `
@@ -129,10 +133,13 @@ Task Build-BooLangExtensions -depends Init-All, Build-BooCompilerTool {
         .\Attributes\RequiredAttribute.boo `
         .\Attributes\TransientAttribute.boo `
         .\Attributes\VolatileAttribute.boo 
+        Move-Item -Force ./Boo.Lang.Extensions.dll "$artifactdir\Boo.Lang.Extensions.dll" 
+        Move-Item -Force ./Boo.Lang.Extensions.pdb "$artifactdir\Boo.Lang.Extensions.pdb" 
+
     pop-location
 }
 
-Task Build-BooLangPatternMatching -depends Init-All, Build-BooCompilerTool {
+Task Build-BooLangPatternMatching -depends Build-BooCompilerTool, Init-All {
     Push-Location src/Boo.Lang.PatternMatching
     &$script:booc `
         -o:"$artifactdir\Boo.Lang.PatternMatching.dll" `
@@ -141,7 +148,7 @@ Task Build-BooLangPatternMatching -depends Init-All, Build-BooCompilerTool {
 }
 
 
-Task Build-TestBooSupportingClasses -depends Init-All, Build-BooCompilerTool {
+Task Build-TestBooSupportingClasses -depends Build-BooCompilerTool, Init-All {
     Push-Location tests/BooSupportingClasses
     &$script:booc `
         -o:"$artifactdir\BooSupportingClasses.dll" `
@@ -149,7 +156,7 @@ Task Build-TestBooSupportingClasses -depends Init-All, Build-BooCompilerTool {
     pop-location
 }
 
-Task Build-TestBooModules -depends Init-All, Build-BooCompilerTool {
+Task Build-TestBooModules -depends Build-BooCompilerTool, Init-All {
     Push-Location tests/BooModules
     &$script:booc `
         -o:"$artifactdir\BooModules.dll" `
@@ -157,7 +164,7 @@ Task Build-TestBooModules -depends Init-All, Build-BooCompilerTool {
     pop-location
 }
 
-Task Build-BooLangInterpreter -depends Init-All, Build-BooCompilerTool, Build-BooLangPatternMatching {
+Task Build-BooLangInterpreter -depends Build-BooCompilerTool, Build-BooLangPatternMatching, Init-All {
     Push-Location src/Boo.Lang.Interpreter
     &$script:booc `
         -o:"$artifactdir\Boo.Lang.Interpreter.dll" `
@@ -166,35 +173,35 @@ Task Build-BooLangInterpreter -depends Init-All, Build-BooCompilerTool, Build-Bo
     pop-location
 }
 
-Task Build-BooLangUseful -depends Init-All, Build-BooCompilerTool {
+Task Build-BooLangUseful -depends Build-BooCompilerTool, Init-All {
     Push-Location src/Boo.Lang.Useful
     &$script:booc `
         -o:"$artifactdir\Boo.Lang.Useful.dll" `
         -srcdir:. `
-        -r:../Boo.Lang.Parser/bin/Debug/net48/Boo.Lang.Parser.dll
+        -r:"$artifactdir\Boo.Lang.Parser.dll"
     pop-location
 }
 
 
-Task Build-Booi -depends Init-All, Build-BooCompilerTool, Build-BooLangUseful {
+Task Build-Booi -depends Build-BooCompilerTool, Build-BooLangUseful, Init-All {
     Push-Location src/Booi
     &$script:booc `
         -o:"$artifactdir\booi.exe" `
         -srcdir:. `
-        -r:../Boo.Lang.Useful/Boo.Lang.Useful.dll
+        -r:"$artifactdir/Boo.Lang.Useful.dll"
     pop-location
 }
 
-Task Build-Booish -depends Init-All, Build-BooCompilerTool, Build-BooLangInterpreter {
+Task Build-Booish -depends Build-BooCompilerTool, Build-BooLangInterpreter, Init-All {
     Push-Location src/Booish
     &$script:booc `
         -o:"$artifactdir\booish.exe" `
-        -r:../Boo.Lang.Interpreter/Boo.Lang.Interpreter.dll `
+        -r:"$artifactdir\Boo.Lang.Interpreter.dll" `
         booish.boo
     pop-location
 }
 
-Task Build-BooLangCodeDom -depends Init-All,Build-BooCompilerTool {
+Task Build-BooLangCodeDom -depends Build-BooCompilerTool, Init-All {
     Push-Location src/Boo.Lang.CodeDom
     &$script:booc `
         -o:"$artifactdir\Boo.Lang.CodeDom.dll" `
@@ -203,7 +210,7 @@ Task Build-BooLangCodeDom -depends Init-All,Build-BooCompilerTool {
 }
 
 
-Task Build-BooCompilerResourcesTests -depends Init-All, Build-BooCompilerTool {
+Task Build-BooCompilerResourcesTests -depends Build-BooCompilerTool, Init-All {
     Push-Location tests/BooCompilerResources.Tests
     $nunit_ref = Get-NUnitPackageLocation .\BooCompilerResources.Tests.build
     Write-Host $nunit_ref
@@ -215,7 +222,7 @@ Task Build-BooCompilerResourcesTests -depends Init-All, Build-BooCompilerTool {
 
 }
 
-Task Build-BooLangCodedomTests -depends Init-All, Build-BooLangCodedom, Build-BooCompilerTool {
+Task Build-BooLangCodedomTests -depends  Build-BooLangCodedom, Build-BooCompilerTool, Init-All {
     Push-Location tests/Boo.Lang.CodeDom.Tests
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.CodeDom.Tests.build
     &$script:booc `
@@ -225,7 +232,7 @@ Task Build-BooLangCodedomTests -depends Init-All, Build-BooLangCodedom, Build-Bo
     pop-location
 }
 
-Task Build-BooLangCompilerTests -depends Init-All, Build-BooLangCompiler, Build-BooCompilerTool {
+Task Build-BooLangCompilerTests -depends Build-BooLangCompiler, Build-BooCompilerTool, Init-All {
     Push-Location tests/Boo.Lang.Compiler.Tests
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.Compiler.Tests.build
     &$script:booc `
@@ -235,7 +242,7 @@ Task Build-BooLangCompilerTests -depends Init-All, Build-BooLangCompiler, Build-
     pop-location
 }
 
-Task Build-BooLangInterpreterTests -depends Init-All, Build-BooLangInterpreter, Build-BooCompilerTool {
+Task Build-BooLangInterpreterTests -depends  Build-BooLangInterpreter, Build-BooCompilerTool, Init-All {
     Push-Location tests/Boo.Lang.Interpreter.Tests
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.Interpreter.Tests.build
     &$script:booc `
@@ -246,7 +253,7 @@ Task Build-BooLangInterpreterTests -depends Init-All, Build-BooLangInterpreter, 
     pop-location
 }
 
-Task Build-BooLangPatternMatchingTests -depends Init-All, Build-BooLangPatternMatching, Build-BooCompilerTool {
+Task Build-BooLangPatternMatchingTests -depends Build-BooLangPatternMatching, Build-BooCompilerTool, Init-All {
     Push-Location tests/Boo.Lang.PatternMatching.Tests
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.PatternMatching.Tests.build
     &$script:booc `
