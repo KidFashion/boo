@@ -81,8 +81,8 @@ Task Build-BooCompilerTool -depends Build-BooLangCompiler, Build-BooLang, Init-A
 Task Build-BooCore -depends Build-BooLang, Build-BooLangCompiler, Build-BooLangParser{
 }
 
-Task Build-All -depends Build-BooLangCodeDom,
-                        Build-BooLangExtensions,
+Task Build-All -depends Build-BooLangExtensions,
+                        Build-BooLangCodeDom,
                         Build-BooLangPatternMatching,
                         Build-Booish,
                         Build-Booi,
@@ -132,7 +132,7 @@ Task Build-BooLangExtensions -depends Build-BooCompilerTool, Init-All {
         .\Attributes\PropertyAttribute.boo `
         .\Attributes\RequiredAttribute.boo `
         .\Attributes\TransientAttribute.boo `
-        .\Attributes\VolatileAttribute.boo `
+        .\Attributes\VolatileAttribute.boo 
         Move-Item -Force ./Boo.Lang.Extensions.dll "$artifactdir\Boo.Lang.Extensions.dll" 
         Move-Item -Force ./Boo.Lang.Extensions.pdb "$artifactdir\Boo.Lang.Extensions.pdb" 
 
