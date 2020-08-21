@@ -101,7 +101,11 @@ Task Init-All {
     mkdir -Force $artifactdir
 }
 Task Build-BooLangExtensions -depends Build-BooCompilerTool, Init-All {
+    if (Test-Path "$artifactdir/Boo.Lang.Extensions.dll") 
+    {
     Remove-Item "$artifactdir/Boo.Lang.Extensions.dll"
+    }
+    Remove-Item 
     Push-Location src/Boo.Lang.Extensions
     &$script:booc `
         -o:"Boo.Lang.Extensions.dll" `
@@ -450,9 +454,13 @@ Task Install-NUnitConsole -depends Build-BooLangTests, Init-All {
     
     $libraries = Get-ValueFromJSON $assetObject.targets $default_target
     $nunit = Get-ValueFromJSON $libraries[1] "NUnit/"
-    $nunit_location = $nunit[1].compile | get-Member |where MemberType -eq "NoteProperty"|select Name
-    $base_packagelocation = $assetObject.packageFolders | get-Member |where MemberType -eq "NoteProperty"|select Name
-    Return Join-Path (Join-Path $base_packagelocation.Name $nunit[0]) $nunit_location.Name
+    $nunit_location = $nunit[1].compile | get-Member |Where-Object MemberType -eq "NoteProperty"|Select-Object Name
+    #$base_packagelocation = $assetObject.packageFolders | get-Member |where MemberType -eq "NoteProperty"|select Name
+
+    $assetObject.packageFolders | get-Member |Where-Object MemberType -eq "NoteProperty"| ForEach-Object {
+        $test_path = Join-Path (Join-Path $_.Name $nunit[0]) $nunit_location.Name
+        if (Test-Path $test_path) {return $test_path}
+    }
 }
 
 function Write-TestResults ($testreport_file)
