@@ -77,6 +77,18 @@ Task Build-BooCompilerTool -depends Build-BooLangCompiler, Build-BooLang{
 Task Build-BooCore -depends Build-BooLang, Build-BooLangCompiler, Build-BooLangParser{
 }
 
+Task Build-All -depends Build-BooLang, 
+                        Build-BooLangCompiler, 
+                        Build-BooLangParser,
+                        Build-BooLangCodeDom,
+                        Build-BooLangExtensions,
+                        Build-BooLangInterpreter,
+                        Build-BooLangPatternMatching,
+                        Build-BooLangUseful,
+                        Build-Booish,
+                        Build-Booi {
+}
+
 Task Clean-All {
     Remove-Item -Force -Recurse $artifactdir
 }
@@ -245,6 +257,86 @@ Task Build-BooLangPatternMatchingTests -depends Init-All, Build-BooLangPatternMa
     pop-location
 }
 
+Task Build-BooLangTests -depends Build-BooLang {
+    Push-Location tests/Boo.Lang.Tests
+    dotnet build Boo.Lang.Tests.csproj
+    # TODO: Check Release/Debug/Framework
+    $buildOutput = join-path (Get-Location) "bin\Debug\net48\"
+    Copy-Item (join-path $buildOutput "*.*") $artifactdir
+    pop-location
+}
+
+Task Test-BooLang -depends Build-BooLangTests {
+    Push-Location tests/Boo.Lang.Tests
+    dotnet test Boo.Lang.Tests.csproj
+    # TODO: Check Release/Debug/Framework
+    pop-location
+}
+
+Task Build-BooLangParserTests -depends Build-BooLangParser {
+    Push-Location tests/Boo.Lang.Parser.Tests
+    dotnet build Boo.Lang.Parser.Tests.csproj
+    # TODO: Check Release/Debug/Framework
+    $buildOutput = join-path (Get-Location) "bin\Debug\net48\"
+    Copy-Item (join-path $buildOutput "*.*") $artifactdir
+    pop-location
+}
+
+Task Test-BooLangParser  {
+    Push-Location tests/Boo.Lang.Parser.Tests
+    dotnet test Boo.Lang.Parser.Tests.csproj
+    # TODO: Check Release/Debug/Framework
+    pop-location
+}
+
+Task Build-BooLangRuntimeTests {
+    Push-Location tests/Boo.Lang.Runtime.Tests
+    dotnet build Boo.Lang.Runtime.Tests.csproj
+    # TODO: Check Release/Debug/Framework
+    $buildOutput = join-path (Get-Location) "bin\Debug\net48\"
+    Copy-Item (join-path $buildOutput "*.*") $artifactdir
+    pop-location
+}
+
+Task Test-BooLangRuntime  {
+    Push-Location tests/Boo.Lang.Runtime.Tests
+    dotnet test Boo.Lang.Runtime.Tests.csproj
+    # TODO: Check Release/Debug/Framework
+    pop-location
+}
+
+Task Build-BoocTests {
+    Push-Location tests/Booc.Tests
+    dotnet build Booc.Tests.csproj
+    # TODO: Check Release/Debug/Framework
+    $buildOutput = join-path (Get-Location) "bin\Debug\net48\"
+    Copy-Item (join-path $buildOutput "*.*") $artifactdir
+    pop-location
+}
+
+Task Test-Booc  {
+    Push-Location tests/Booc.Tests
+    dotnet test Booc.Tests.csproj
+    # TODO: Check Release/Debug/Framework
+    pop-location
+}
+
+Task Build-BooCompilerTests {
+    Push-Location tests/BooCompiler.Tests
+    dotnet build BooCompiler.Tests.csproj
+    # TODO: Check Release/Debug/Framework
+    $buildOutput = join-path (Get-Location) "bin\Debug\net48\"
+    Copy-Item (join-path $buildOutput "*.*") $artifactdir
+    pop-location
+}
+
+Task Test-BooCompiler  {
+    Push-Location tests/BooCompiler.Tests
+    dotnet test BooCompiler.Tests.csproj
+    # TODO: Check Release/Debug/Framework
+    pop-location
+}
+
 Task Build-BooLangUsefulTests -depends Init-All, Build-BooLangUseful, Build-BooCompilerTool {
     Push-Location tests/Boo.Lang.Useful.Tests
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.Useful.Tests.build
@@ -257,7 +349,16 @@ Task Build-BooLangUsefulTests -depends Init-All, Build-BooLangUseful, Build-BooC
 }
 
 # Depends on building all boo tests and installing nunit3-console and referencing nunit.* dlls
-Task Test-BooCompiledAssemblies -depends Init-All {
+# TODO: Boo compiled assemblies cannot be tested using dotnet test therefore nunit-console-runner must be installed (Via chocolatey) 
+# TODO: and nunit*.dlls needs to be copied where nunit-console-runner can find them (i.e. artifacts)
+Task Test-BooCompiledAssemblies -depends    Init-All, 
+                                            Install-NUnitConsole, 
+                                            Build-BooLangCodedomTests,
+                                            Build-BooLangCompilerTests, 
+                                            Build-BooLangInterpreterTests, 
+                                            Build-BooLangPatternMatchingTests,
+                                            Build-BooLangUsefulTests, 
+                                            Build-BooCompilerResourcesTests {
     Push-Location ./Artifacts
     nunit3-console `
         Boo.Lang.CodeDom.Tests.dll `
@@ -266,15 +367,68 @@ Task Test-BooCompiledAssemblies -depends Init-All {
         Boo.Lang.PatternMatching.Tests.dll `
         Boo.Lang.Useful.Tests.dll `
         BooCompilerResources.Tests.dll
-
-    $xml = [xml](Get-Content .\TestResult.xml)
-    $xml.'test-run'.'test-suite' | ForEach-Object {
-        if ($_.result -eq "Passed") {$color = [System.ConsoleColor]::Green}
-        else {$color = [System.ConsoleColor]::Red}
-        Write-Host -ForegroundColor Yellow "Name: $($_.name)"
-        Write-Host -ForegroundColor $color "Result: $($_.result) Total Tests: $($_.total) Passed: $($_.passed) Failed: $($_.failed) Warnings: $($_.warnings) Inconclusive: $($_.inconclusive) Skipped: $($_.skipped)"
-    }
+ 
+    Write-TestResults .\TestResult.xml
     Pop-Location
+}
+
+Task Test-CSharpCompiledAssemblies -depends Init-All, 
+                                            Install-NUnitConsole, 
+                                            Build-BooLangParserTests,
+                                            Build-BooLangRuntimeTests, 
+                                            Build-BooLangTests, 
+                                            Build-BooCompilerTests, 
+                                            Build-BoocTests {
+    Push-Location ./Artifacts
+    nunit3-console `
+        Boo.Lang.Parser.Tests.dll `
+        Boo.Lang.Runtime.Tests.dll `
+        Boo.Lang.Tests.dll `
+        BooCompiler.Tests.dll `
+        Booc.Tests.dll
+
+    Write-TestResults .\TestResult.xml
+    Pop-Location
+}
+
+
+Task Test-All -depends  Init-All, 
+                        Install-NUnitConsole, 
+                        Build-BooLangParserTests,
+                        Build-BooLangRuntimeTests, 
+                        Build-BooLangTests, 
+                        Build-BooCompilerTests, 
+                        Build-BoocTests,
+                        Build-BooLangCodedomTests,
+                        Build-BooLangCompilerTests, 
+                        Build-BooLangInterpreterTests, 
+                        Build-BooLangPatternMatchingTests,
+                        Build-BooLangUsefulTests, 
+                        Build-BooCompilerResourcesTests {
+    Push-Location ./Artifacts
+    nunit3-console `
+        Boo.Lang.Parser.Tests.dll `
+        Boo.Lang.Runtime.Tests.dll `
+        Boo.Lang.Tests.dll `
+        BooCompiler.Tests.dll `
+        Booc.Tests.dll `
+        Boo.Lang.CodeDom.Tests.dll `
+        Boo.Lang.Compiler.Tests.dll `
+        Boo.Lang.Interpreter.Tests.dll `
+        Boo.Lang.PatternMatching.Tests.dll `
+        Boo.Lang.Useful.Tests.dll `
+        BooCompilerResources.Tests.dll
+
+    Write-TestResults .\TestResult.xml
+    Pop-Location
+}
+
+Task Install-NUnitConsole -depends Init-All {
+    choco install nunit-console-runner
+    push-location tests/Boo.Lang.Tests
+    $path = Get-NUnitPackageLocation /Boo.Lang.Tests.csproj
+    pop-location
+    Copy-Item $path Artifacts/
 }
 
 ######################### HELPER FUNCTIONS ##########################################
@@ -291,7 +445,18 @@ Task Test-BooCompiledAssemblies -depends Init-All {
     Return Join-Path (Join-Path $base_packagelocation.Name $nunit[0]) $nunit_location.Name
 }
 
+function Write-TestResults ($testreport_file)
+{
+    $xml = [xml](Get-Content $testreport_file)
+    $xml.'test-run'.'test-suite' | ForEach-Object {
+        if ($_.result -eq "Passed") {$color = [System.ConsoleColor]::Green}
+        elseif ($_.result -eq "Skipped") {$color = [System.ConsoleColor]::Yellow}
+        else {$color = [System.ConsoleColor]::Red}
+        Write-Host -ForegroundColor Yellow "Name: $($_.name)"
+        Write-Host -ForegroundColor $color "Result: $($_.result) Total Tests: $($_.total) Passed: $($_.passed) Failed: $($_.failed) Warnings: $($_.warnings) Inconclusive: $($_.inconclusive) Skipped: $($_.skipped)"
+    }
 
+}
 function Get-ValueFromJSON ($json, $partial_key)
 {
     $fieldName = ($json |Get-Member | Where-object Name -match $partial_key).Name

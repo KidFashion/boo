@@ -45,13 +45,18 @@ namespace BooCompiler.Tests
 			get { return Path.Combine(BasePath, "tests/testcases"); }
 		}
 
+		// HACK: The whole code to get BasePath seems fragile, because it depends on relative paths starting from executing assembly.
 		public static string BasePath
 		{
 			get
 			{
 				// TODO: Adding 3 .. to match dotnet directory hierarchies
 				var codebase = new Uri(Assembly.GetExecutingAssembly().CodeBase);
-				return new Uri(codebase, "../../../../..").LocalPath;
+				
+				if (System.IO.Path.GetDirectoryName(codebase.AbsolutePath).EndsWith("Artifacts"))
+					return new Uri(codebase, "..").LocalPath;
+				else 
+					return new Uri(codebase, "../../../../..").LocalPath;
 			}
 		}
 
