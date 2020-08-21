@@ -203,7 +203,7 @@ Task Build-Booish -depends Build-BooCompilerTool, Build-BooLangInterpreter, Init
     pop-location
 }
 
-Task Build-BooLangCodeDom -depends Build-BooCompilerTool, Init-All {
+Task Build-BooLangCodeDom -depends Build-BooCompilerTool, Build-BooLangExtensions, Init-All {
     Push-Location src/Boo.Lang.CodeDom
     &$script:booc `
         -o:"$artifactdir\Boo.Lang.CodeDom.dll" `
@@ -433,7 +433,7 @@ Task Test-All -depends  Init-All,
     Pop-Location
 }
 
-Task Install-NUnitConsole -depends Init-All {
+Task Install-NUnitConsole -depends Build-BooLangTests, Init-All {
     choco install nunit-console-runner
     push-location tests/Boo.Lang.Tests
     $path = Get-NUnitPackageLocation /Boo.Lang.Tests.csproj
