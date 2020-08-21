@@ -104,6 +104,7 @@ Task Build-BooLangExtensions -depends Build-BooCompilerTool, Init-All {
     Push-Location src/Boo.Lang.Extensions
     &$script:booc `
         -o:"$artifactdir\Boo.Lang.Extensions.dll" `
+        -t:classlib `
         .\AssemblyInfo.boo `
         .\Macros\AssertMacro.boo `
         .\Macros\CheckedMacro.boo `
