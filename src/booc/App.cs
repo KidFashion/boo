@@ -96,10 +96,11 @@ namespace booc
 				var context = compiler.Run();
 				processingTime.Stop();
 
+				//TODO: Add a parameter to write warnings to out or error
 				if (context.Warnings.Count > 0)
 				{
-					Console.Error.WriteLine(context.Warnings);
-					Console.Error.WriteLine(StringResources.BooC_Warnings, context.Warnings.Count);
+					Console.Out.WriteLine(context.Warnings);
+					Console.Out.WriteLine(StringResources.BooC_Warnings, context.Warnings.Count);
 				}
 
 				if (context.Errors.Count == 0)
@@ -112,7 +113,7 @@ namespace booc
 				}
 
 				if (parameters.TraceWarning)
-					Console.Error.WriteLine(StringResources.BooC_ProcessingTime, parameters.Input.Count,
+					Console.Out.WriteLine(StringResources.BooC_ProcessingTime, parameters.Input.Count,
 					                        processingTime.ElapsedMilliseconds, setupTime.ElapsedMilliseconds);
 			}
 			catch (Exception x)
