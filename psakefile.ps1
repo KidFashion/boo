@@ -133,7 +133,6 @@ Task Build-BooLangExtensions -depends Build-BooCompilerTool, Init-All {
         .\Attributes\RequiredAttribute.boo `
         .\Attributes\TransientAttribute.boo `
         .\Attributes\VolatileAttribute.boo `
-        -r:"$artifactdir\Boo.Lang.Parser.dll" 
         Move-Item -Force ./Boo.Lang.Extensions.dll "$artifactdir\Boo.Lang.Extensions.dll" 
         Move-Item -Force ./Boo.Lang.Extensions.pdb "$artifactdir\Boo.Lang.Extensions.pdb" 
 
@@ -207,7 +206,7 @@ Task Build-BooLangCodeDom -depends Build-BooCompilerTool, Init-All {
     &$script:booc `
         -o:"$artifactdir\Boo.Lang.CodeDom.dll" `
         -srcdir:. `
-        -r:"$artifactdir\Boo.Lang.Parser.dll" 
+        -r:"$artifactdir\Boo.Lang.Extensions.dll" 
     pop-location
 }
 
