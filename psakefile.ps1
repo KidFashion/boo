@@ -77,8 +77,8 @@ Task Build-BooCompilerTool -depends Build-BooLangCompiler, Build-BooLang, Init-A
     Copy-Item (join-path $buildOutput "*.*") $artifactdir
     pop-location
     # Check if on linux (use mono) or windows (use booc.exe), on APPVEYOR this is driven by env variable APPVEYOR_BUILD_WORKER_IMAGE 
-    $image = Get-Content env:APPVEYOR_BUILD_WORKER_IMAGE
-    if ($image -eq "Ubuntu")  
+    #$image = Get-Content env:APPVEYOR_BUILD_WORKER_IMAGE
+    if ((Test-Path env:APPVEYOR_BUILD_WORKER_IMAGE) -and ((Get-Content env:APPVEYOR_BUILD_WORKER_IMAGE) -eq "Ubuntu"))  
     {
         # Running on Appveyor Ubuntu, use Mono
         $exePath = join-path ($artifactdir) "\booc.exe"

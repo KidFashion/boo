@@ -44,6 +44,8 @@ class CompilerResourcesFixture:
 		parameters = compiler.Parameters
 		parameters.OutputType = CompilerOutputType.Library
 		parameters.OutputAssembly = MapPath(outputAssembly)
+		# Test fails when not using collectible because it cannot add resources to temporary assemblies
+		parameters.GenerateCollectible = false
 		parameters.Resources.Add(resource)
 		parameters.Pipeline = CompileToFile()
 		context = compiler.Run()
