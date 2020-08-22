@@ -41,7 +41,7 @@ namespace Boo.Lang.Compiler.Pipelines
 		override protected void Prepare(CompilerContext context)
 		{
 			base.Prepare(context);
-#if !NET_40_OR_GREATER
+#if NO_COLLECTIBLE_ASSEMBLIES
             context.Parameters.GenerateCollectible = false;
 #else
             context.Parameters.GenerateCollectible = true;

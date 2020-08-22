@@ -108,7 +108,7 @@ namespace Boo.Lang.Compiler
 			_outputWriter = Console.Out;
 			Debug = true;
 			Checked = true;
-#if !NET_40_OR_GREATER
+#if NO_COLLECTIBLE_ASSEMBLIES
             GenerateCollectible = false;
 #else
             GenerateCollectible = true;

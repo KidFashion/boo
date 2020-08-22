@@ -44,6 +44,8 @@ Write-Host -ForegroundColor Green "Build-BooCompilerTool"-nonewline; write-host 
 Write-Host -ForegroundColor Green "Build-Booi"-nonewline; write-host " : Build (Booi) Boo Interpreter (NET48)"
 Write-Host -ForegroundColor Green "Build-Booish"-nonewline; write-host " : Build (Booish) Boo Interpreter Shell (NET48)"
 Write-Host -ForegroundColor Green "Clean-All"-nonewline; write-host " : Clean Artifacts folder."
+Write-Host -ForegroundColor Green "Build-All"-nonewline; write-host " : Build all projects and deploy result in Artifacts folder."
+Write-Host -ForegroundColor Green "Test-All"-nonewline; write-host " : Run all tests using Nunit3 Console Runner."
 #Write-Host -ForegroundColor Green "Build-Solution-net40"-nonewline; write-host " : Build Project (4.0)"
 
 }
