@@ -1,8 +1,7 @@
 Properties {
+    $nunitconsoleDownloadUrl="https://github.com/nunit/nunit-console/releases/download/v3.11.1/NUnit.Console-3.11.1.zip"
     $script:hash = @{}
     $script:hash.build_mode = "Release"
-    $solution = (ls *.sln).Name
-    $packageName = [System.IO.Path]::GetFileNameWithoutExtension((ls *.sln))
     # Test
     $testPrj = "..\..\tests\"
 
@@ -77,7 +76,18 @@ Task Build-BooCompilerTool -depends Build-BooLangCompiler, Build-BooLang, Init-A
     # TODO: Check Release/Debug/Framework
     Copy-Item (join-path $buildOutput "*.*") $artifactdir
     pop-location
-    $script:booc = join-path ($artifactdir) "\booc.exe"
+    # Check if on linux (use mono) or windows (use booc.exe), on APPVEYOR this is driven by env variable APPVEYOR_BUILD_WORKER_IMAGE 
+    if (env:APPVEYOR_BUILD_WORKER_IMAGE -eq "Ubuntu")
+    {
+        # Running on Appveyor Ubuntu, use Mono
+        $exePath = join-path ($artifactdir) "\booc.exe"
+        $script:booc = "mono $exePath"
+
+    }
+    else {
+        #Right now else assume we are running on windows.
+        $script:booc = join-path ($artifactdir) "\booc.exe"
+    }
 }
 
 Task Build-BooCore -depends Build-BooLang, Build-BooLangCompiler, Build-BooLangParser{
@@ -108,115 +118,143 @@ Task Build-BooLangExtensions -depends Build-BooCompilerTool, Build-BooLangParser
         Remove-Item "$artifactdir/Boo.Lang.Extensions.dll"
     }
     Push-Location src/Boo.Lang.Extensions
-    &$script:booc `
-        -o:"Boo.Lang.Extensions.dll" `
-        .\AssemblyInfo.boo `
-        .\Macros\MacroMacro.boo `
-        .\Macros\AssertMacro.boo `
-        .\Macros\CheckedMacro.boo `
-        .\Macros\DebugMacro.boo `
-        .\Macros\Globals.boo `
-        .\Macros\IfdefMacro.boo `
-        .\Macros\Initialization.boo `
-        .\Macros\LockMacro.boo `
-        .\Macros\PreservingMacro.boo `
-        .\Macros\PrintMacro.boo `
-        .\Macros\PropertyMacro.boo `
-        .\Macros\RawArrayIndexingMacro.boo `
-        .\Macros\UnsafeMacro.boo `
-        .\Macros\UsingMacro.boo `
-        .\Macros\VarMacro.boo `
-        .\Macros\YieldAllMacro.boo `
-        .\MetaMethods\Async.boo `
-        .\MetaMethods\Await.boo `
-        .\MetaMethods\DefaultMetaMethod.boo `
-        .\MetaMethods\SizeOf.boo `
-        .\Environments\EnvironmentExtensions.boo `
-        .\Attributes\AsyncAttribute.boo `
-        .\Attributes\DefaultAttribute.boo `
-        .\Attributes\GetterAttribute.boo `
-        .\Attributes\LockAttribute.boo `
-        .\Attributes\PropertyAttribute.boo `
-        .\Attributes\RequiredAttribute.boo `
-        .\Attributes\TransientAttribute.boo `
-        .\Attributes\VolatileAttribute.boo 
-        Move-Item -Force ./Boo.Lang.Extensions.dll "$artifactdir\Boo.Lang.Extensions.dll" 
-        Move-Item -Force ./Boo.Lang.Extensions.pdb "$artifactdir\Boo.Lang.Extensions.pdb" 
+    $arguments = -join     
+ (  "-o:'Boo.Lang.Extensions.dll' " ,
+    ".\AssemblyInfo.boo " ,
+    ".\Macros\MacroMacro.boo " ,
+    ".\Macros\AssertMacro.boo " ,
+    ".\Macros\CheckedMacro.boo " ,
+    ".\Macros\DebugMacro.boo " ,
+    ".\Macros\Globals.boo " ,
+    ".\Macros\IfdefMacro.boo " ,
+    ".\Macros\Initialization.boo " ,
+    ".\Macros\LockMacro.boo " ,
+    ".\Macros\PreservingMacro.boo " ,
+    ".\Macros\PrintMacro.boo " ,
+    ".\Macros\PropertyMacro.boo " ,
+    ".\Macros\RawArrayIndexingMacro.boo " , 
+    ".\Macros\UnsafeMacro.boo " ,
+    ".\Macros\UsingMacro.boo " ,
+    ".\Macros\VarMacro.boo " ,
+    ".\Macros\YieldAllMacro.boo " ,
+    ".\MetaMethods\Async.boo " ,
+    ".\MetaMethods\Await.boo " ,
+    ".\MetaMethods\DefaultMetaMethod.boo ", 
+    ".\MetaMethods\SizeOf.boo " ,
+    ".\Environments\EnvironmentExtensions.boo " ,
+    ".\Attributes\AsyncAttribute.boo " ,
+    ".\Attributes\DefaultAttribute.boo " ,
+    ".\Attributes\GetterAttribute.boo " ,
+    ".\Attributes\LockAttribute.boo " ,
+    ".\Attributes\PropertyAttribute.boo " ,
+    ".\Attributes\RequiredAttribute.boo " ,
+    ".\Attributes\TransientAttribute.boo " ,
+    ".\Attributes\VolatileAttribute.boo " 
+ )
+    $command = "& $script:booc $arguments"
+    write-host $command
+    Invoke-Expression $command
+
+    Move-Item -Force ./Boo.Lang.Extensions.dll "$artifactdir\Boo.Lang.Extensions.dll" 
+    Move-Item -Force ./Boo.Lang.Extensions.pdb "$artifactdir\Boo.Lang.Extensions.pdb" 
 
     pop-location
 }
 
-Task Build-BooLangPatternMatching -depends Build-BooCompilerTool, Init-All {
+Task Build-BooLangPatternMatching -depends Build-BooCompilerTool, Build-BooLangExtensions, Init-All {
     Push-Location src/Boo.Lang.PatternMatching
-    &$script:booc `
-        -o:"$artifactdir\Boo.Lang.PatternMatching.dll" `
-        -srcdir:.
+    $arguments = -join 
+ (  "-o:'$artifactdir\Boo.Lang.PatternMatching.dll' " ,
+    "-srcdir:."
+ )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
+        
     pop-location
 }
 
 
 Task Build-BooSupportingClasses -depends Build-BooCompilerTool, Init-All {
     Push-Location tests/BooSupportingClasses
-    &$script:booc `
-        -o:"$artifactdir\BooSupportingClasses.dll" `
-        -srcdir:.
+    $arguments = -join     
+ (  "-o:'$artifactdir\BooSupportingClasses.dll' " ,
+    "-srcdir:."
+ )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
 Task Build-BooModules -depends Build-BooCompilerTool, Init-All {
     Push-Location tests/BooModules
-    &$script:booc `
-        -o:"$artifactdir\BooModules.dll" `
-        -srcdir:.
+
+    $arguments = -join     
+ (  "-o:'$artifactdir\BooModules.dll' " ,
+    "-srcdir:."
+ )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
 Task Build-BooLangInterpreter -depends Build-BooCompilerTool, Build-BooLangPatternMatching, Init-All {
     Push-Location src/Boo.Lang.Interpreter
-    &$script:booc `
-        -o:"$artifactdir\Boo.Lang.Interpreter.dll" `
-        -srcdir:. `
-        -r:"$artifactdir\Boo.Lang.PatternMatching.dll"
+    $arguments = -join     
+ (  "-o:'$artifactdir\Boo.Lang.Interpreter.dll' " ,
+    "-srcdir:. ",
+    "-r:'$artifactdir\Boo.Lang.PatternMatching.dll' "
+ )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
 Task Build-BooLangUseful -depends Build-BooCompilerTool, Init-All {
     Push-Location src/Boo.Lang.Useful
-    $backupErrorActionPreference = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    &$script:booc `
-        -o:"$artifactdir\Boo.Lang.Useful.dll" `
-        -srcdir:. `
-        -r:"$artifactdir\Boo.Lang.Parser.dll"
-    $ErrorActionPreference = $backupErrorActionPreference
+    $arguments = -join     
+ (  "-o:'$artifactdir\Boo.Lang.Useful.dll' " ,
+    "-srcdir:. ",
+    "-r:'$artifactdir\Boo.Lang.Parser.dll' "
+ )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
 
 Task Build-Booi -depends Build-BooCompilerTool, Build-BooLangUseful, Init-All {
     Push-Location src/Booi
-    &$script:booc `
-        -o:"$artifactdir\booi.exe" `
-        -srcdir:. `
-        -r:"$artifactdir/Boo.Lang.Useful.dll"
+    $arguments = -join     
+ (  "-o:'$artifactdir\booi.exe' " ,
+    "-srcdir:. ",
+    "-r:'$artifactdir\Boo.Lang.Useful.dll' "
+ )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
 Task Build-Booish -depends Build-BooCompilerTool, Build-BooLangInterpreter, Init-All {
     Push-Location src/Booish
-    &$script:booc `
-        -o:"$artifactdir\booish.exe" `
-        -r:"$artifactdir\Boo.Lang.Interpreter.dll" `
-        booish.boo
+    $arguments = -join     
+ (  "-o:'$artifactdir\booish.exe' " ,
+    "booish.boo ",
+    "-r:'$artifactdir\Boo.Lang.Interpreter.dll' "
+ )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
 Task Build-BooLangCodeDom -depends Build-BooCompilerTool, Build-BooLangExtensions, Init-All {
     Push-Location src/Boo.Lang.CodeDom
-    &$script:booc `
-        -o:"$artifactdir\Boo.Lang.CodeDom.dll" `
-        -srcdir:. `
-        -r:"$artifactdir\Boo.Lang.Extensions.dll" 
+    $arguments = -join     
+ (  "-o:'$artifactdir\Boo.Lang.CodeDom.dll' " ,
+    "-srcdir:. ",
+    "-r:'$artifactdir\Boo.Lang.Extensions.dll' "
+ )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
@@ -225,59 +263,69 @@ Task Build-BooCompilerResourcesTests -depends Build-BooCompilerTool, Init-All {
     Push-Location tests/BooCompilerResources.Tests
     $nunit_ref = Get-NUnitPackageLocation .\BooCompilerResources.Tests.build
     Write-Host $nunit_ref
-    &$script:booc `
-        -o:"$artifactdir\BooCompilerResources.Tests.dll" `
-        -srcdir:. `
-        -r:$nunit_ref
+    $arguments = -join     
+ (  "-o:'$artifactdir\BooCompilerResources.Tests.dll' " ,
+    "-srcdir:. ",
+    "-r:$nunit_ref "
+ )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
+
     pop-location
 
 }
 
 Task Build-BooLangCodedomTests -depends  Build-BooLangCodedom, Build-BooCompilerTool, Init-All {
     Push-Location tests/Boo.Lang.CodeDom.Tests
-    $backupErrorActionPreference = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.CodeDom.Tests.build
-    &$script:booc `
-        -o:"$artifactdir\Boo.Lang.CodeDom.Tests.dll" `
-        -srcdir:. `
-        -r:$nunit_ref 
-    $ErrorActionPreference = $backupErrorActionPreference
+    $arguments = -join     
+ (  "-o:'$artifactdir\Boo.Lang.CodeDom.Tests.dll' " ,
+    "-srcdir:. ",
+    "-r:$nunit_ref "
+ )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
 Task Build-BooLangCompilerTests -depends Build-BooLangCompiler, Build-BooCompilerTool, Init-All {
     Push-Location tests/Boo.Lang.Compiler.Tests
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.Compiler.Tests.build
-    &$script:booc `
-        -o:"$artifactdir\Boo.Lang.Compiler.Tests.dll" `
-        -srcdir:. `
-        -r:$nunit_ref 
+    $arguments = -join     
+ (  "-o:'$artifactdir\Boo.Lang.Compiler.Tests.dll' " ,
+    "-srcdir:. ",
+    "-r:$nunit_ref "
+ )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
 Task Build-BooLangInterpreterTests -depends  Build-BooLangInterpreter, Build-BooCompilerTool, Init-All {
     Push-Location tests/Boo.Lang.Interpreter.Tests
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.Interpreter.Tests.build
-    $backupErrorActionPreference = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    &$script:booc `
-        -o:"$artifactdir\Boo.Lang.Interpreter.Tests.dll" `
-        -srcdir:. `
-        -r:$nunit_ref `
-        -r:"$artifactdir\Boo.Lang.Interpreter.dll" 
-    $ErrorActionPreference = $backupErrorActionPreference
+    $arguments = -join     
+ (  "-o:'$artifactdir\Boo.Lang.Interpreter.Tests.dll' " ,
+    "-srcdir:. ",
+    "-r:$nunit_ref ",
+    "-r:'$artifactdir\Boo.Lang.Interpreter.dll' " 
+    )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
 Task Build-BooLangPatternMatchingTests -depends Build-BooLangPatternMatching, Build-BooCompilerTool, Init-All {
     Push-Location tests/Boo.Lang.PatternMatching.Tests
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.PatternMatching.Tests.build
-    &$script:booc `
-        -o:"$artifactdir\Boo.Lang.PatternMatching.Tests.dll" `
-        -srcdir:. `
-        -r:$nunit_ref `
-        -r:"$artifactdir\Boo.Lang.PatternMatching.dll" 
+    $arguments = -join     
+ (  "-o:'$artifactdir\Boo.Lang.PatternMatching.Tests.dll' " ,
+    "-srcdir:. ",
+    "-r:$nunit_ref ",
+    "-r:'$artifactdir\Boo.Lang.PatternMatching.dll' " 
+    )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
@@ -364,11 +412,14 @@ Task Test-BooCompiler  {
 Task Build-BooLangUsefulTests -depends Init-All, Build-BooLangUseful, Build-BooCompilerTool {
     Push-Location tests/Boo.Lang.Useful.Tests
     $nunit_ref = Get-NUnitPackageLocation .\Boo.Lang.Useful.Tests.build
-    &$script:booc `
-        -o:"$artifactdir\Boo.Lang.Useful.Tests.dll" `
-        -srcdir:. `
-        -r:$nunit_ref `
-        -r:"$artifactdir\Boo.Lang.Useful.dll" 
+    $arguments = -join     
+ (  "-o:'$artifactdir\Boo.Lang.Useful.Tests.dll' " ,
+    "-srcdir:. ",
+    "-r:$nunit_ref ",
+    "-r:'$artifactdir\Boo.Lang.Useful.dll' " 
+    )
+    $command = "& $script:booc $arguments"
+    Invoke-Expression $command
     pop-location
 }
 
