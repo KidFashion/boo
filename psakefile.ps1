@@ -72,8 +72,8 @@ Task Build-BooLangParser -depends Init-All {
 }
 
 Task Build-BooCompilerTool -depends Build-BooLangCompiler, Build-BooLang, Init-All{
-    Push-Location src/Booc
-    dotnet build Booc.csproj
+    Push-Location src/booc
+    dotnet build booc.csproj
     # TODO: Check Release/Debug/Framework
     Copy-Item (join-path $buildOutput "*.*") $artifactdir
     pop-location
@@ -330,8 +330,8 @@ Task Test-BooLangRuntime  {
 }
 
 Task Build-BoocTests {
-    Push-Location tests/Booc.Tests
-    dotnet build Booc.Tests.csproj
+    Push-Location tests/booc.Tests
+    dotnet build booc.Tests.csproj
     # TODO: Check Release/Debug/Framework
     $buildOutput = join-path (Get-Location) "bin\Debug\net48\"
     Copy-Item (join-path $buildOutput "*.*") $artifactdir
@@ -339,8 +339,8 @@ Task Build-BoocTests {
 }
 
 Task Test-Booc  {
-    Push-Location tests/Booc.Tests
-    dotnet test Booc.Tests.csproj
+    Push-Location tests/booc.Tests
+    dotnet test booc.Tests.csproj
     # TODO: Check Release/Debug/Framework
     pop-location
 }
@@ -409,7 +409,7 @@ Task Test-CSharpCompiledAssemblies -depends Init-All,
         Boo.Lang.Runtime.Tests.dll `
         Boo.Lang.Tests.dll `
         BooCompiler.Tests.dll `
-        Booc.Tests.dll
+        booc.Tests.dll
 
     Write-TestResults .\TestResult.xml
     Pop-Location
@@ -435,7 +435,7 @@ Task Test-All -depends  Init-All,
         Boo.Lang.Runtime.Tests.dll `
         Boo.Lang.Tests.dll `
         BooCompiler.Tests.dll `
-        Booc.Tests.dll `
+        booc.Tests.dll `
         Boo.Lang.CodeDom.Tests.dll `
         Boo.Lang.Compiler.Tests.dll `
         Boo.Lang.Interpreter.Tests.dll `
